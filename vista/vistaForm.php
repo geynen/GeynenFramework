@@ -29,7 +29,7 @@ if($accion=='ACTUALIZAR'){
 	$sqlVista=$objVista->getSQL($idvista,$filtro);
 	//echo $sqlVista;
 	//OBTENGO DATOS
-	$rstVista=$objVista->getDataPaginacion(1,1,1,1,$sqlVista);
+	$rstVista=$objVista->getData($sqlVista);
 	if(is_string($rstVista)){
 		echo "Error al ejecutar consulta: ".$rst."";
 		exit();
