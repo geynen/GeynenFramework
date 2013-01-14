@@ -22,8 +22,8 @@ class clsGeneral extends clsAccesoDatos
 		}
 		$arg=substr($arg,0,-1);
 		
-		$sql = "execute ".$function_sql." ".$arg;echo $sql;
-		//$res = $this->ejecutarSP($sql);
+		$sql = "execute ".$function_sql." ".$arg;//echo $sql;
+		$res = $this->ejecutarSP($sql);
 		if($res==0){
 			return "Guardado correctamente";
 		}else{

@@ -44,8 +44,12 @@ switch($accion){
 		$function_sql=$dataOperacion->function_sql;
 		$argumentos_sql=$dataOperacion->argumentos_sql;
 		
-		//echo $objGeneral->operacionGeneral($data,$function_sql,$argumentos_sql);
-		echo $objGeneral->insertarGeneral($idvista,$data);
+		//VERIFICO SI TRABAJA CON FUNCION SQL
+		if($function_sql!=''){
+			echo $objGeneral->operacionGeneral($data,$function_sql,$argumentos_sql);
+		}else{
+			echo $objGeneral->insertarGeneral($idvista,$data);
+		}
 		break;
 				
 	case "ACTUALIZAR" :
@@ -75,8 +79,12 @@ switch($accion){
 		$function_sql=$dataOperacion->function_sql;
 		$argumentos_sql=$dataOperacion->argumentos_sql;
 
-		//echo $objGeneral->operacionGeneral($data,$function_sql,$argumentos_sql);
-		echo $objGeneral->actualizarGeneral($idvista,$data);
+		//VERIFICO SI TRABAJA CON FUNCION SQL
+		if($function_sql!=''){
+			echo $objGeneral->operacionGeneral($data,$function_sql,$argumentos_sql);
+		}else{
+			echo $objGeneral->actualizarGeneral($idvista,$data);
+		}
 		break;
 		
 	case "OPERACION" :
