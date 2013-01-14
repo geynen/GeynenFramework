@@ -51,8 +51,17 @@ $dataCampos = $rstCampos->fetchAll();
 <ul id="ul-form">
 <?php 
 foreach($dataCampos as $indice => $value){
-	//$renderCampos.="<li>".$value['etiqueta'].': <input type="text" id="'.$value['nombre'].'" name="'.$value['nombre'].'" value="'.(isset($dataVista[$value['nombre']])?$dataVista[$value['nombre']]:$_GET[$value['nombre']]).'"></li>';
-	$renderCampos.="<li>".$value['etiqueta'].': '.$objVista->renderControles($idvista,$indice,$value['nombre'],$value['css'],$value['idtipocontrol'],$value['idcombo'],$value['valor_opcional'],$value['valores'],$value['defecto'],$dataVista[$value['nombre']]).'</li>';
+	if($value['visible']=='S'){
+		//si el tipo de control es = 2 (caja oculta) no mostrar etiqueta
+		if($value['idtipocontrol']!=2){
+			$etiquetainicio='<li><label for="'.$value['nombre'].'">'.$value['etiqueta'].': </label>';
+			$etiquetafin='</li>';
+		}else{
+			$etiquetainicio='';
+			$etiquetafin='';
+		}
+		$renderCampos.=$etiquetainicio.$objVista->renderControles($idvista,$indice,$value['nombre'],$value['css'],$value['idtipocontrol'],$value['idcombo'],$value['valor_opcional'],$value['valores'],$value['defecto'],$dataVista[$value['nombre']]).$etiquetafin;
+	}
 }
 echo $renderCampos;
 ?>

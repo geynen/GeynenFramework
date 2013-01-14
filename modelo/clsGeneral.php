@@ -139,7 +139,7 @@ class clsGeneral extends clsAccesoDatos
 			$sql = "execute up_BuscarGeneral ".$nro_reg.", $nro_hoja, '$order', $by, $id, '".$descripcion."'";
 			return $this->obtenerDataSP($sql);
 		}else{
-			$sql="select c.idcampo, c.nombre as nombre, va.etiqueta, va.operador, va.defecto, va.css, c.idtipocontrol, c.idtipodato, c.idcombo, c.valores, c.idhandler, c.script_js, c.llave, c.valor_opcional from vista_atributo va inner join campo c on va.idatributo=c.idcampo and va.idtabla=c.idtabla and tipoatributo='C' inner join tabla on tabla.idtabla=c.idtabla where 1=1 ";
+			$sql="select c.idcampo, c.nombre as nombre, va.etiqueta, va.operador, va.defecto, va.css, va.visible, c.idtipocontrol, c.idtipodato, c.idcombo, c.valores, c.idhandler, c.script_js, c.llave, c.valor_opcional from vista_atributo va inner join campo c on va.idatributo=c.idcampo and va.idtabla=c.idtabla and tipoatributo='C' inner join tabla on tabla.idtabla=c.idtabla where 1=1 ";
 			
 			if($idvista>0){ $sql.=" AND va.idvista = ".$idvista;}
 			if($idregionvista>0){ $sql.=" AND idregionvista = ".$idregionvista;}
