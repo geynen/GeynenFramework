@@ -13,45 +13,8 @@ class clsGeneral extends clsAccesoDatos
 		}
 		parent::__construct();
 	}
-
-	function insertarGeneral($data, $function_sql, $argumentos_sql)
- 	{ 	
-		//$argumentos_sql="nombre,descripcion,ayuda,tipotabla";
-		$argumentos=explode(',',$argumentos_sql);
-		foreach($argumentos as $indice => $value){
-			$arg.="'".$data[$value]."',";
-		}
-		$arg=substr($arg,0,-1);
-		
-		$sql = "execute ".$function_sql." ".$arg;//echo $sql;
-		$res = $this->ejecutarSP($sql);
-		if($res==0){
-			return "Guardado correctamente";
-		}else{
-			return $this->gError[2];
-		}
- 	}
 	
-	function actualizarGeneral($data, $function_sql, $argumentos_sql)
- 	{
-   		//$argumentos_sql="id,nombre,descripcion,ayuda,tipotabla";
-		$argumentos=explode(',',$argumentos_sql);
-		foreach($argumentos as $indice => $value){
-			$arg.="'".$data[$value]."',";
-		}
-		$arg=substr($arg,0,-1);
-		
-		$sql = "execute ".$function_sql." ".$arg;//echo $sql;
-		$res = $this->ejecutarSP($sql);
-		if($res==0){
-			return "Guardado correctamente";
-		}else{
-			return $this->gError[2];
-		}
- 	}
-	
-	function operacionGeneral($data, $function_sql, $argumentos_sql)
- 	{ 	
+	function operacionGeneral($data, $function_sql, $argumentos_sql){ 	
 		//$argumentos_sql="nombre,descripcion,ayuda,tipotabla";
 		$argumentos=explode(',',$argumentos_sql);
 		foreach($argumentos as $indice => $value){
@@ -67,9 +30,110 @@ class clsGeneral extends clsAccesoDatos
 			return $this->gError[2];
 		}
  	}
+	
+	function insertarGeneral($idvista, $data){ 	
+		
+		//OBTENGO DATOS DE LA VISTA
+		$rstVista=$this->getVista($idvista);
+		$datavista=$rstVista->fetchObject();
+		$idtabla=$datavista->idtabla;
+		//OBTENGO DATOS DE LA TABLA
+		$dataTabla=$this->getTabla($idtabla);
+		$nombretabla=strtolower($dataTabla->nombre);
+		//OBTENGO CAMPO PK
+		$rstPK=$this->getCampoPK($idtabla);
+		$dataPK=$rstPK->fetchObject();
+		$PK=strtolower($dataPK->nombre);
+		//OBTENGO CAMPOS PKD
+		$rstPKD=$this->getCamposPKD($idtabla);
+		while($dataPKD=$rstPKD->fetchObject()){
+			$PKD.=strtolower($dataPKD->nombre)."='".$data[$dataPKD->nombre]."' and";
+		}
+		if(isset($PKD) and $PKD!=""){
+			$PKD=" where ".substr($PKD,0,-3);
+		}
+		//FORMO CONSULTA PARA OBTENER ID
+		$sql="select max(".$PK.") as id from ".$nombretabla.$PKD;
+		//echo $sql;
+		$rst=$this->obtenerDataSQL($sql);
+		$datoID=$rst->fetchObject();
+		$ID=$datoID->id + 1;
+		
+		//OBTENGO CAMPOS
+		$rstCampos = $this->getCampos($idvista,1);
+		while($dataCampos = $rstCampos->fetchObject()){
+			$strCampos.=$dataCampos->nombre.",";
+			if($dataCampos->nombre==$PK){
+				$strCamposDato.="'".$ID."',";
+			}else{
+				$strCamposDato.="'".$data[$dataCampos->nombre]."',";
+			}
+		}
+		$strCampos=strtolower(substr($strCampos,0,-1));
+		$strCamposDato=substr($strCamposDato,0,-1);
+		
+		//FORMO CONSULTA PARA INSERT
+		$sql="insert into ".$nombretabla." (".$strCampos.") values(".$strCamposDato.")";
+		//echo $sql;		
+		$this->iniciarTransaccion();
+		$res = $this->ejecutarSQL($sql);
+		
+		if($res==0){
+			$this->finalizarTransaccion();
+			return "Guardado correctamente";
+		}else{
+			$this->abortarTransaccion();
+			return $this->gError[2];
+		}
+ 	}
+	
+	function actualizarGeneral($idvista, $data){ 	
+		
+		//OBTENGO DATOS DE LA VISTA
+		$rstVista=$this->getVista($idvista);
+		$datavista=$rstVista->fetchObject();
+		$idtabla=$datavista->idtabla;
+		//OBTENGO DATOS DE LA TABLA
+		$dataTabla=$this->getTabla($idtabla);
+		$nombretabla=strtolower($dataTabla->nombre);
+		//OBTENGO CAMPO PK
+		$rstPK=$this->getCampoPK($idtabla);
+		$dataPK=$rstPK->fetchObject();
+		$PK=strtolower($dataPK->nombre)."='".$data[$dataPK->nombre]."'";
+		//OBTENGO CAMPOS PKD
+		$rstPKD=$this->getCamposPKD($idtabla);
+		while($dataPKD=$rstPKD->fetchObject()){
+			$PKD.=strtolower($dataPKD->nombre)."='".$data[$dataPKD->nombre]."' and";
+		}
+		if(isset($PKD) and $PKD!=""){
+			$PKD=substr($PKD,0,-3);
+		}
+		
+		//OBTENGO CAMPOS
+		$rstCampos = $this->getCampos($idvista,1);
+		while($dataCampos = $rstCampos->fetchObject()){
+			if($dataCampos->llave!='PK' and $dataCampos->llave!='PKD'){
+				$strCamposDato.=strtolower($dataCampos->nombre)."='".$data[$dataCampos->nombre]."',";
+			}
+		}
+		$strCamposDato=substr($strCamposDato,0,-1);
+		
+		//FORMO CONSULTA PARA INSERT
+		$sql="update ".$nombretabla." set ".$strCamposDato." where ".$PK.($PKD!=''?" and ".$PKD:"");
+		//echo $sql;		
+		$this->iniciarTransaccion();
+		$res = $this->ejecutarSQL($sql);
+		
+		if($res==0){
+			$this->finalizarTransaccion();
+			return "Guardado correctamente";
+		}else{
+			$this->abortarTransaccion();
+			return $this->gError[2];
+		}
+ 	}
 
-	function consultarGeneral($nro_reg, $nro_hoja, $order, $by, $id, $descripcion)
- 	{
+	function consultarGeneral($nro_reg, $nro_hoja, $order, $by, $id, $descripcion){//PENDIENTE
 		if(parent::getTipoBD()==1){
 			$descripcion = "%".$descripcion."%";
 			$sql = "execute up_BuscarGeneral ".$nro_reg.", $nro_hoja, '$order', $by, $id, '".$this->mill($descripcion)."'";
@@ -102,8 +166,7 @@ class clsGeneral extends clsAccesoDatos
 		} 	 	
  	}
 	
-	function getVista($id, $nombre='')
- 	{
+	function getVista($id, $nombre=''){
 		if(parent::getTipoBD()==1){
 			$descripcion = "%".$descripcion."%";
 			$sql = "execute up_BuscarGeneral ".$nro_reg.", $nro_hoja, '$order', $by, $id, '".$descripcion."'";
@@ -124,6 +187,13 @@ class clsGeneral extends clsAccesoDatos
 		} 	 	
  	}
 	
+	function getTabla($idtabla){
+		
+		$sql="select * from tabla where idtabla=".$idtabla;
+		$rst=$this->obtenerDataSQL($sql);
+		return $rst->fetchObject();
+	}
+	
 	function getFiltros($idvista){
 		$rstFiltro=$this->getCampos($idvista,2);
 		while($datoFiltro=$rstFiltro->fetchObject()){
@@ -132,8 +202,7 @@ class clsGeneral extends clsAccesoDatos
 		return $filtro;
 	}
 	
-	function getCampos($idvista, $idregionvista=0)
- 	{
+	function getCampos($idvista, $idregionvista=0){
 		if(parent::getTipoBD()==1){
 			$descripcion = "%".$descripcion."%";
 			$sql = "execute up_BuscarGeneral ".$nro_reg.", $nro_hoja, '$order', $by, $id, '".$descripcion."'";
@@ -149,10 +218,24 @@ class clsGeneral extends clsAccesoDatos
 			return $this->obtenerDataSQL($sql);
 		} 	
 	}
- 	
 	
-	function getSQL($idvista,$filtro=''){
+	function getCampoPK($idtabla){
+		$sql="select c.idcampo, c.nombre as nombre, c.idtipocontrol, c.idtipodato, c.idcombo, c.valores, c.idhandler, c.script_js, c.llave, c.valor_opcional from campo c where llave='PK' ";
 		
+		if($idtabla>0){ $sql.=" AND c.idtabla = ".$idtabla;}
+		
+		return $this->obtenerDataSQL($sql);
+	}
+	
+	function getCamposPKD($idtabla){
+		$sql="select c.idcampo, c.nombre as nombre, c.idtipocontrol, c.idtipodato, c.idcombo, c.valores, c.idhandler, c.script_js, c.llave, c.valor_opcional from campo c where llave='PKD' ";
+		
+		if($idtabla>0){ $sql.=" AND c.idtabla = ".$idtabla;}
+		
+		return $this->obtenerDataSQL($sql);
+	} 	
+	
+	function getSQL($idvista,$filtro=''){		
 		$sql="select * from vista where idvista=".$idvista;
 		$rst=$this->obtenerDataSQL($sql);
 		$datoVista=$rst->fetchObject();
@@ -182,8 +265,7 @@ class clsGeneral extends clsAccesoDatos
 		return strtolower($sql);
  	}
 	
-	function getDataPaginacion($nro_reg, $nro_hoja, $order, $by, $sql)
- 	{
+	function getDataPaginacion($nro_reg, $nro_hoja, $order, $by, $sql){
 		if(parent::getTipoBD()==1){
 			$descripcion = "%".$descripcion."%";
 			$sql = "execute up_BuscarGeneral ".$nro_reg.", $nro_hoja, '$order', $by, $id, '".$this->mill($descripcion)."'";
@@ -211,8 +293,7 @@ class clsGeneral extends clsAccesoDatos
 		} 	 	
  	}
 	
-	function getData($sql)
- 	{
+	function getData($sql){
 		if(parent::getTipoBD()==1){
 			$descripcion = "%".$descripcion."%";
 			$sql = "execute up_BuscarGeneral ".$nro_reg.", $nro_hoja, '$order', $by, $id, '".$this->mill($descripcion)."'";
@@ -223,8 +304,7 @@ class clsGeneral extends clsAccesoDatos
 		} 	 	
  	}
 	
-	function getOperaciones($idvista, $idregionvista=0, $idtabla=0, $idoperacion=0, $idhandler=0, $tipo='', $idvista_atributo=0)
- 	{
+	function getOperaciones($idvista, $idregionvista=0, $idtabla=0, $idoperacion=0, $idhandler=0, $tipo='', $idvista_atributo=0){
 		if(parent::getTipoBD()==1){
 			$descripcion = "%".$descripcion."%";
 			$sql = "execute up_BuscarGeneral ".$nro_reg.", $nro_hoja, '$order', $by, $id, '".$descripcion."'";
@@ -244,13 +324,6 @@ class clsGeneral extends clsAccesoDatos
 			//echo $sql;
 			return $this->obtenerDataSQL($sql);
 		} 	
-	}
-	
-	function getDataTabla($idtabla){
-		
-		$sql="select * from tabla where idtabla=".$idtabla;
-		$rst=$this->obtenerDataSQL($sql);
-		return $rst->fetchObject();
 	}
 	
 	function renderScript_JS_Operaciones($idvista,$idregionvista=1){
@@ -343,7 +416,7 @@ class clsGeneral extends clsAccesoDatos
 					$renderControles.='<option value="'.$valor_opcional.'" selected>'.$descripcion_opcional.'</option>';
 				}
 				//Obtengo datos de la tabla
-				$datosTabla=$this->getDataTabla($idcombo);
+				$datosTabla=$this->getTabla($idcombo);
 				$sql="select * from ".$datosTabla->nombre." order by 2 asc";
 				$rstTabla=$this->obtenerDataSQL($sql);
 				while($datoTabla=$rstTabla->fetchObject()){

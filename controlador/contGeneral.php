@@ -28,7 +28,7 @@ switch($accion){
 		$dataCampos = $rstCampos->fetchAll();
 		foreach($dataCampos as $indice => $value){
 			if($value['idtipodato']==2){//NUMERICO O ENTERO				
-				$data[$value['nombre']]=isset($_POST[$value['nombre']])?$_POST[$value['nombre']]:0;
+				$data[$value['nombre']]=((isset($_POST[$value['nombre']]) and $_POST[$value['nombre']]!='')?$_POST[$value['nombre']]:0);
 			}else{
 				$data[$value['nombre']]=$_POST[$value['nombre']];
 			}
@@ -44,9 +44,10 @@ switch($accion){
 		$function_sql=$dataOperacion->function_sql;
 		$argumentos_sql=$dataOperacion->argumentos_sql;
 		
-		echo $objGeneral->insertarGeneral($data,$function_sql,$argumentos_sql);
+		//echo $objGeneral->operacionGeneral($data,$function_sql,$argumentos_sql);
+		echo $objGeneral->insertarGeneral($idvista,$data);
 		break;
-		
+				
 	case "ACTUALIZAR" :
 		if(ob_get_length()) ob_clean();
 		//OBTENGO DATOS DE LOS CAMPOS ENVIADOS DESDE EL FORM
@@ -58,7 +59,7 @@ switch($accion){
 		$dataCampos = $rstCampos->fetchAll();
 		foreach($dataCampos as $indice => $value){
 			if($value['idtipodato']==2){//NUMERICO O ENTERO				
-				$data[$value['nombre']]=isset($_POST[$value['nombre']])?$_POST[$value['nombre']]:0;
+				$data[$value['nombre']]=((isset($_POST[$value['nombre']]) and $_POST[$value['nombre']]!='')?$_POST[$value['nombre']]:0);
 			}else{
 				$data[$value['nombre']]=$_POST[$value['nombre']];
 			}
@@ -73,8 +74,9 @@ switch($accion){
 		$dataOperacion = $rstOperacion->fetchObject();
 		$function_sql=$dataOperacion->function_sql;
 		$argumentos_sql=$dataOperacion->argumentos_sql;
-		
-		echo $objGeneral->actualizarGeneral($data,$function_sql,$argumentos_sql);
+
+		//echo $objGeneral->operacionGeneral($data,$function_sql,$argumentos_sql);
+		echo $objGeneral->actualizarGeneral($idvista,$data);
 		break;
 		
 	case "OPERACION" :
