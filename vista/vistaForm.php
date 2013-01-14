@@ -29,7 +29,7 @@ if($accion=='ACTUALIZAR'){
 	$sqlVista=$objVista->getSQL($idvista,$filtro);
 	//echo $sqlVista;
 	//OBTENGO DATOS
-	$rstVista=$objVista->getData(1,1,1,1,$sqlVista);
+	$rstVista=$objVista->getDataPaginacion(1,1,1,1,$sqlVista);
 	if(is_string($rstVista)){
 		echo "Error al ejecutar consulta: ".$rst."";
 		exit();
@@ -52,7 +52,7 @@ $dataCampos = $rstCampos->fetchAll();
 <?php 
 foreach($dataCampos as $indice => $value){
 	//$renderCampos.="<li>".$value['etiqueta'].': <input type="text" id="'.$value['nombre'].'" name="'.$value['nombre'].'" value="'.(isset($dataVista[$value['nombre']])?$dataVista[$value['nombre']]:$_GET[$value['nombre']]).'"></li>';
-	$renderCampos.="<li>".$value['etiqueta'].': '.$objVista->renderControles($idvista,$indice,$value['nombre'],$value['css'],$value['idtipocontrol'],$value['comno_origen'],$value['idcombo'],$value['valores'],$value['defecto'],$dataVista[$value['nombre']]).'</li>';
+	$renderCampos.="<li>".$value['etiqueta'].': '.$objVista->renderControles($idvista,$indice,$value['nombre'],$value['css'],$value['idtipocontrol'],$value['idcombo'],$value['valor_opcional'],$value['valores'],$value['defecto'],$dataVista[$value['nombre']]).'</li>';
 }
 echo $renderCampos;
 ?>

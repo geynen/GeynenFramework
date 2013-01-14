@@ -139,7 +139,7 @@ class clsGeneral extends clsAccesoDatos
 			$sql = "execute up_BuscarGeneral ".$nro_reg.", $nro_hoja, '$order', $by, $id, '".$descripcion."'";
 			return $this->obtenerDataSP($sql);
 		}else{
-			$sql="select c.idcampo, c.nombre as nombre, va.etiqueta, va.operador, va.defecto, va.css, c.idtipocontrol, c.idtipodato, c.combo_origen, c.idcombo, c.valores, c.idhandler, c.script_js, c.primaria, c.primaria_dependiente from vista_atributo va inner join campo c on va.idatributo=c.idcampo and va.idtabla=c.idtabla and tipoatributo='C' inner join tabla on tabla.idtabla=c.idtabla where 1=1 ";
+			$sql="select c.idcampo, c.nombre as nombre, va.etiqueta, va.operador, va.defecto, va.css, c.idtipocontrol, c.idtipodato, c.idcombo, c.valores, c.idhandler, c.script_js, c.llave, c.valor_opcional from vista_atributo va inner join campo c on va.idatributo=c.idcampo and va.idtabla=c.idtabla and tipoatributo='C' inner join tabla on tabla.idtabla=c.idtabla where 1=1 ";
 			
 			if($idvista>0){ $sql.=" AND va.idvista = ".$idvista;}
 			if($idregionvista>0){ $sql.=" AND idregionvista = ".$idregionvista;}
@@ -168,7 +168,7 @@ class clsGeneral extends clsAccesoDatos
 		}
 		$atributos=substr($atributos,0,-1);
 		
-		if(isset($filtro)){
+		if(isset($filtro) and $filtro!=''){
 			foreach($filtro as $indice => $value){
 				if(strtolower($value['operador'])=='like'){
 					$strFiltro.=" and ".$indice." ".$value['operador']." '%".$value['valor']."%'";
@@ -182,7 +182,7 @@ class clsGeneral extends clsAccesoDatos
 		return strtolower($sql);
  	}
 	
-	function getData($nro_reg, $nro_hoja, $order, $by, $sql, $filtro='')
+	function getDataPaginacion($nro_reg, $nro_hoja, $order, $by, $sql)
  	{
 		if(parent::getTipoBD()==1){
 			$descripcion = "%".$descripcion."%";
@@ -208,6 +208,18 @@ class clsGeneral extends clsAccesoDatos
 				$limit = " LIMIT ".$nro_reg." OFFSET ".($nro_reg*$nro_hoja - $nro_reg);
 			}
 			return $this->obtenerDataSQL("SELECT ".$total." as NroTotal, ".substr($sql,7,strlen($sql)-7)." ".chr(13)."	ORDER BY " . ($order)." ".$by.chr(13).$limit);
+		} 	 	
+ 	}
+	
+	function getData($sql)
+ 	{
+		if(parent::getTipoBD()==1){
+			$descripcion = "%".$descripcion."%";
+			$sql = "execute up_BuscarGeneral ".$nro_reg.", $nro_hoja, '$order', $by, $id, '".$this->mill($descripcion)."'";
+			return $this->obtenerDataSP($sql);
+		}else{
+			//echo $sql;
+			return $this->obtenerDataSQL($sql);
 		} 	 	
  	}
 	
@@ -300,7 +312,7 @@ class clsGeneral extends clsAccesoDatos
 		return $renderScripJS_Operaciones;
 	}
 	
-	function renderControles($idvista,$idcampo,$nombre,$css,$idtipocontrol,$combo_origen,$idcombo,$valores,$defecto,$datocampo){
+	function renderControles($idvista,$idcampo,$nombre,$css,$idtipocontrol,$idcombo,$valor_opcional,$valores,$defecto,$datocampo){
 		switch ($idtipocontrol){
 			case 2://CAJA DE OCULTA
 				$renderControles='<input type="hidden" id="'.$nombre.'" name="'.$nombre.'" value="'.(isset($datocampo)?$datocampo:$_GET[$nombre]).'">';
@@ -321,22 +333,49 @@ class clsGeneral extends clsAccesoDatos
 				}
 				$renderControles.='</select>';
 				break;
-			case 5://SELECT SIMPLE ORIGEN (VISTA O TABLA)
+			case 5://SELECT SIMPLE ORIGEN TABLA
 				$renderControles='<select id="'.$nombre.'" name="'.$nombre.'">';
-				$renderControles.='<option value="0" selected>Ninguno</option>';
-				if($combo_origen=='V'){//VISTA
-				}else{//TABLA
-					$datosTabla=$this->getDataTabla($idcombo);
-					$sql="select * from ".$datosTabla->nombre." order by 2 asc";
-					$rstTabla=$this->obtenerDataSQL($sql);
-					while($datoTabla=$rstTabla->fetchObject()){
-						//Separamos cadena de valores a mostrar
-						$arrayValores=explode(",",$valores);//solo se acepta 2 valores
-						$valor=trim($datoTabla->$arrayValores[0]);
-						$descripcion=trim($datoTabla->$arrayValores[1]);
-						$seleccionado=(isset($datocampo)?$datocampo:$defecto);
-						$renderControles.='<option value="'.$valor.'" '.($seleccionado==$valor?'selected':'').' >'.$descripcion.'</option>';
-					}
+				//Obtengo datos del valor opcional
+				if($valor_opcional!=''){
+					$arrayValor_opcional=explode('|',$valor_opcional);
+					$valor_opcional=trim($arrayValor_opcional[0]);
+					$descripcion_opcional=trim($arrayValor_opcional[1]);
+					$renderControles.='<option value="'.$valor_opcional.'" selected>'.$descripcion_opcional.'</option>';
+				}
+				//Obtengo datos de la tabla
+				$datosTabla=$this->getDataTabla($idcombo);
+				$sql="select * from ".$datosTabla->nombre." order by 2 asc";
+				$rstTabla=$this->obtenerDataSQL($sql);
+				while($datoTabla=$rstTabla->fetchObject()){
+					//Separamos cadena de valores a mostrar
+					$arrayValores=explode(",",$valores);//solo se acepta 2 valores
+					$valor=trim($datoTabla->$arrayValores[0]);
+					$descripcion=trim($datoTabla->$arrayValores[1]);
+					$seleccionado=(isset($datocampo)?$datocampo:$defecto);
+					$renderControles.='<option value="'.$valor.'" '.($seleccionado==$valor?'selected':'').' >'.$descripcion.'</option>';
+				}
+				$renderControles.='</select>';
+				break;
+			case 6://SELECT SIMPLE ORIGEN VISTA (PENDIENTE)
+				$renderControles='<select id="'.$nombre.'" name="'.$nombre.'">';
+				//Obtengo datos del valor opcional
+				if($valor_opcional!=''){
+					$arrayValor_opcional=explode('|',$valor_opcional);
+					$valor_opcional=trim($arrayValor_opcional[0]);
+					$descripcion_opcional=trim($arrayValor_opcional[1]);
+					$renderControles.='<option value="'.$valor_opcional.'" selected>'.$descripcion_opcional.'</option>';
+				}
+				//OBTENGO SENTENCIA SQL
+				$sqlVista=$this->getSQL($idcombo);
+				//OBTENGO DATOS
+				$rstVista=$this->getData($sqlVista);
+				while($datoVista=$rstVista->fetchObject()){
+					//Separamos cadena de valores a mostrar
+					$arrayValores=explode(",",$valores);//solo se acepta 2 valores
+					$valor=trim($datoVista->$arrayValores[0]);
+					$descripcion=trim($datoVista->$arrayValores[1]);
+					$seleccionado=(isset($datocampo)?$datocampo:$defecto);
+					$renderControles.='<option value="'.$valor.'" '.($seleccionado==$valor?'selected':'').' >'.$descripcion.'</option>';
 				}
 				$renderControles.='</select>';
 				break;

@@ -64,7 +64,7 @@ if($nro_ope>0){
 </tr>
 <?php
 //OBTENGO DATOS
-$rstVista=$objVista->getData(100,$nro_hoja,1,1,$sqlVista);
+$rstVista=$objVista->getDataPaginacion(100,$nro_hoja,1,1,$sqlVista);
 if(is_string($rstVista)){
 	echo "<tr><td colspan=100>Error al ejecutar consulta</td></tr><tr><td colspan=100>".$rst."</td>";
 	echo "</tr></table>";
