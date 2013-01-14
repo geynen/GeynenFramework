@@ -314,14 +314,16 @@ class clsGeneral extends clsAccesoDatos
 				$arrayValores=explode("\x0a",$valores);
 				foreach($arrayValores as $indice => $value){
 					$arrayValor=explode('|',$value);
-					$valor=$arrayValor[0];
-					$descripcion=$arrayValor[1];
-					$renderControles.='<option value="'.$valor.'" '.($defecto==$valor?'selected':'').' >'.$descripcion.'</option>';
+					$valor=trim($arrayValor[0]);
+					$descripcion=trim($arrayValor[1]);
+					$seleccionado=(isset($datocampo)?$datocampo:$defecto);
+					$renderControles.='<option value="'.$valor.'" '.($seleccionado==$valor?'selected':'').' >'.$descripcion.'</option>';
 				}
 				$renderControles.='</select>';
 				break;
 			case 5://SELECT SIMPLE ORIGEN (VISTA O TABLA)
 				$renderControles='<select id="'.$nombre.'" name="'.$nombre.'">';
+				$renderControles.='<option value="0" selected>Ninguno</option>';
 				if($combo_origen=='V'){//VISTA
 				}else{//TABLA
 					$datosTabla=$this->getDataTabla($idcombo);
@@ -330,9 +332,10 @@ class clsGeneral extends clsAccesoDatos
 					while($datoTabla=$rstTabla->fetchObject()){
 						//Separamos cadena de valores a mostrar
 						$arrayValores=explode(",",$valores);//solo se acepta 2 valores
-						$valor=$datoTabla->$arrayValores[0];
-						$descripcion=$datoTabla->$arrayValores[1];
-						$renderControles.='<option value="'.$valor.'" '.($defecto==$valor?'selected':'').' >'.$descripcion.'</option>';
+						$valor=trim($datoTabla->$arrayValores[0]);
+						$descripcion=trim($datoTabla->$arrayValores[1]);
+						$seleccionado=(isset($datocampo)?$datocampo:$defecto);
+						$renderControles.='<option value="'.$valor.'" '.($seleccionado==$valor?'selected':'').' >'.$descripcion.'</option>';
 					}
 				}
 				$renderControles.='</select>';
