@@ -437,9 +437,13 @@ class clsGeneral extends clsAccesoDatos
 		return $renderScripJS_Operaciones;
 	}
 	
-	function renderControles($idvista,$idcampo,$nombre,$css,$idtipocontrol,$idcombo,$valor_opcional,$valores,$defecto,$datocampo){
+	function renderControles($idvista,$idcampo,$nombre,$etiqueta,$css,$idtipocontrol,$idcombo,$valor_opcional,$valores,$defecto,$datocampo){
+		$etiquetainicio='<li><label for="'.$value['nombre'].'">'.$value['etiqueta'].': </label>';
+		$etiquetafin='</li>';
 		switch ($idtipocontrol){
 			case 2://CAJA DE OCULTA
+				$etiquetainicio='';
+				$etiquetafin='';
 				$renderControles='<input type="hidden" id="'.$nombre.'" name="'.$nombre.'" value="'.(isset($datocampo)?$datocampo:$_GET[$nombre]).'">';
 				break;
 			case 3://TEXT AREA
@@ -508,7 +512,7 @@ class clsGeneral extends clsAccesoDatos
 				$renderControles='<input type="text" id="'.$nombre.'" name="'.$nombre.'" value="'.(isset($datocampo)?$datocampo:$_GET[$nombre]).'">';
 				break;
 		}
-		return $renderControles;	
+		return $etiquetainicio.$renderControles.$etiquetafin;	
 	}
 }
 ?>
