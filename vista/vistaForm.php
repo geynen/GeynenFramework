@@ -52,7 +52,7 @@ $dataCampos = $rstCampos->fetchAll();
 <?php 
 foreach($dataCampos as $indice => $value){
 	if($value['visible']=='S'){
-		$renderCampos.=$objVista->renderControles($idvista,$indice,$value['nombre'],$value['etiqueta'],$value['css'],$value['idtipocontrol'],$value['idcombo'],$value['valor_opcional'],$value['valores'],$value['defecto'],$dataVista[$value['nombre']]);
+		$renderCampos.=$objVista->renderControles($idvista,$value['idtabla'],$indice,$value['nombre'],$value['etiqueta'],$value['css'],$value['idtipocontrol'],$value['idcombo'],$value['valor_opcional'],$value['valores'],$value['defecto'],$dataVista[$value['nombre']]);
 		$renderScriptJS.=$value['script_js'];
 	}
 }

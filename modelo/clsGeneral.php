@@ -245,7 +245,7 @@ class clsGeneral extends clsAccesoDatos
 			$sql = "execute up_BuscarGeneral ".$nro_reg.", $nro_hoja, '$order', $by, $id, '".$descripcion."'";
 			return $this->obtenerDataSP($sql);
 		}else{
-			$sql="select c.idcampo, c.nombre as nombre, va.etiqueta, va.operador, va.defecto, va.css, va.visible, c.idtipocontrol, c.idtipodato, c.idcombo, c.valores, c.idhandler, c.script_js, c.llave, c.valor_opcional from vista_atributo va inner join campo c on va.idatributo=c.idcampo and va.idtabla=c.idtabla and tipoatributo='C' inner join tabla on tabla.idtabla=c.idtabla where 1=1 ";
+			$sql="select c.idtabla, c.idcampo, c.nombre as nombre, c.idtipocontrol, c.idtipodato, c.idcombo, c.valores, c.idhandler, c.script_js, c.llave, c.valor_opcional, va.etiqueta, va.operador, va.defecto, va.css, va.visible from vista_atributo va inner join campo c on va.idatributo=c.idcampo and va.idtabla=c.idtabla and tipoatributo='C' inner join tabla on tabla.idtabla=c.idtabla where 1=1 ";
 			
 			if($idvista>0){ $sql.=" AND va.idvista = ".$idvista;}
 			if($idregionvista>0){ $sql.=" AND idregionvista = ".$idregionvista;}
@@ -271,6 +271,23 @@ class clsGeneral extends clsAccesoDatos
 		
 		return $this->obtenerDataSQL($sql);
 	} 	
+	
+	function getAtributosCampo($idtabla,$idcampo){
+		$sql="select ca.valor, ac.nombre from campo_atributo ca inner join atributo_control ac on ac.idatributo_control=ca.idatributo_control and ac.idtipocontrol=ca.idtipocontrol where 1=1 ";
+		
+		if($idtabla>0){ $sql.=" AND ca.idtabla = ".$idtabla;}
+		if($idcampo>0){ $sql.=" AND ca.idcampo = ".$idcampo;}
+		
+		return $this->obtenerDataSQL($sql);
+	}
+	
+	function getAtributosControl($idtipocontrol){
+		$sql="select * from atributo_control ac where 1=1 ";
+		
+		if($idtipocontrol>0){ $sql.=" AND ac.idtipocontrol = ".$idtipocontrol;}
+		
+		return $this->obtenerDataSQL($sql);
+	}
 	
 	function getSQL($idvista,$filtro=''){		
 		$sql="select * from vista where idvista=".$idvista;
@@ -437,9 +454,27 @@ class clsGeneral extends clsAccesoDatos
 		return $renderScripJS_Operaciones;
 	}
 	
-	function renderControles($idvista,$idcampo,$nombre,$etiqueta,$css,$idtipocontrol,$idcombo,$valor_opcional,$valores,$defecto,$datocampo){
-		$etiquetainicio='<li id="li_'.$nombre.'"><label for="'.$nombre.'">'.$etiqueta.': </label>';
+	function renderControles($idvista,$idtabla,$idcampo,$nombre,$etiqueta,$css,$idtipocontrol,$idcombo,$valor_opcional,$valores,$defecto,$datocampo){
+		
+		//OBTENGO ATRIBUTOS DEL CAMPO
+		$rstAtributoCampo=$this->getAtributosCampo($idtabla,$idcampo);
+		while($dataAtributoCampo=$rstAtributoCampo->fetchObject()){
+				$datoAtributoCampo[$dataAtributoCampo->nombre]=array ("valor"=>$dataAtributoCampo->valor);
+		}		
+		//OBTENGO ATRIBUTOS DEL CONTROL
+		$rstAtributoControl=$this->getAtributosControl($idtipocontrol);
+		while($dataAtributoControl=$rstAtributoControl->fetchObject()){
+			//Verifico si el atributo del campo tiene un valor, para asignarlo como valor por defecto
+			if(isset($datoAtributoCampo['rows']['valor']) and $datoAtributoCampo['rows']['valor']!=''){
+				$datoAtributoControl[$dataAtributoControl->nombre]=array ("valores"=>$dataAtributoControl->valores,"defecto"=>$datoAtributoCampo['rows']['valor']);
+			}else{
+				$datoAtributoControl[$dataAtributoControl->nombre]=array ("valores"=>$dataAtributoControl->valores,"defecto"=>$dataAtributoControl->defecto);			
+			}
+		}
+		
+		$etiquetainicio='<li id="li_'.$nombre.'" class="'.$css.'"><label for="'.$nombre.'">'.$etiqueta.': </label>';
 		$etiquetafin='</li>';
+		
 		switch ($idtipocontrol){
 			case 2://CAJA DE OCULTA
 				$etiquetainicio='';
@@ -447,7 +482,7 @@ class clsGeneral extends clsAccesoDatos
 				$renderControles='<input type="hidden" id="'.$nombre.'" name="'.$nombre.'" value="'.(isset($datocampo)?$datocampo:$_GET[$nombre]).'">';
 				break;
 			case 3://TEXT AREA
-				$renderControles='<textarea id="'.$nombre.'" name="'.$nombre.'">'.(isset($datocampo)?$datocampo:$_GET[$nombre]).'</textarea>';
+				$renderControles='<textarea id="'.$nombre.'" name="'.$nombre.'" rows="'.$datoAtributoControl['rows']['defecto'].'"  cols="'.$datoAtributoControl['cols']['defecto'].'">'.(isset($datocampo)?$datocampo:$_GET[$nombre]).'</textarea>';
 				break;
 			case 4://SELECT SIMPLE
 				$renderControles='<select id="'.$nombre.'" name="'.$nombre.'">';
