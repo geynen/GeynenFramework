@@ -465,8 +465,8 @@ class clsGeneral extends clsAccesoDatos
 		$rstAtributoControl=$this->getAtributosControl($idtipocontrol);
 		while($dataAtributoControl=$rstAtributoControl->fetchObject()){
 			//Verifico si el atributo del campo tiene un valor, para asignarlo como valor por defecto
-			if(isset($datoAtributoCampo['rows']['valor']) and $datoAtributoCampo['rows']['valor']!=''){
-				$datoAtributoControl[$dataAtributoControl->nombre]=array ("valores"=>$dataAtributoControl->valores,"defecto"=>$datoAtributoCampo['rows']['valor']);
+			if(isset($datoAtributoCampo[$dataAtributoControl->nombre]['valor']) and $datoAtributoCampo[$dataAtributoControl->nombre]['valor']!=''){
+				$datoAtributoControl[$dataAtributoControl->nombre]=array ("valores"=>$dataAtributoControl->valores,"defecto"=>$datoAtributoCampo[$dataAtributoControl->nombre]['valor']);
 			}else{
 				$datoAtributoControl[$dataAtributoControl->nombre]=array ("valores"=>$dataAtributoControl->valores,"defecto"=>$dataAtributoControl->defecto);			
 			}
