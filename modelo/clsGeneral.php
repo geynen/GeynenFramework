@@ -118,11 +118,48 @@ class clsGeneral extends clsAccesoDatos
 		}
 		$strCamposDato=substr($strCamposDato,0,-1);
 		
-		//FORMO CONSULTA PARA INSERT
+		//FORMO CONSULTA PARA UPDATE
 		$sql="update ".$nombretabla." set ".$strCamposDato." where ".$PK.($PKD!=''?" and ".$PKD:"");
 		//echo $sql;		
 		$this->iniciarTransaccion();
 		$res = $this->ejecutarSQL($sql);
+		
+		if($res==0){
+			$this->finalizarTransaccion();
+			return "Guardado correctamente";
+		}else{
+			$this->abortarTransaccion();
+			return $this->gError[2];
+		}
+ 	}
+	
+	function eliminarGeneral($idvista, $data){ 	
+		
+		//OBTENGO DATOS DE LA VISTA
+		$rstVista=$this->getVista($idvista);
+		$datavista=$rstVista->fetchObject();
+		$idtabla=$datavista->idtabla;
+		//OBTENGO DATOS DE LA TABLA
+		$dataTabla=$this->getTabla($idtabla);
+		$nombretabla=strtolower($dataTabla->nombre);
+		//OBTENGO CAMPO PK
+		$rstPK=$this->getCampoPK($idtabla);
+		$dataPK=$rstPK->fetchObject();
+		$PK=strtolower($dataPK->nombre)."='".$data[$dataPK->nombre]."'";
+		//OBTENGO CAMPOS PKD
+		$rstPKD=$this->getCamposPKD($idtabla);
+		while($dataPKD=$rstPKD->fetchObject()){
+			$PKD.=strtolower($dataPKD->nombre)."='".$data[$dataPKD->nombre]."' and";
+		}
+		if(isset($PKD) and $PKD!=""){
+			$PKD=substr($PKD,0,-3);
+		}
+		
+		//FORMO CONSULTA PARA DELETE
+		$sql="delete from ".$nombretabla." where ".$PK.($PKD!=''?" and ".$PKD:"");
+		echo $sql;		
+		$this->iniciarTransaccion();
+		//$res = $this->ejecutarSQL($sql);
 		
 		if($res==0){
 			$this->finalizarTransaccion();
@@ -351,7 +388,28 @@ class clsGeneral extends clsAccesoDatos
 					if($value!='') $arg.="+'&".$value."='+".$value;
 				}
 				$script_js="setRun(".$operacion["idvista_redirect"].",'vistaForm','&accion=ACTUALIZAR&idvistaatributo='+idvistaatributo".(isset($arg)?$arg:"'").",'".$operacion["contenedor_redirect"]."');";
-			}elseif($operacion["idhandler"]==3){//OTRO
+			}elseif($operacion["idhandler"]==3){//ELIMINAR
+				$argumentos=explode(',',$operacion["argumentos"]);
+				$arg="";
+				foreach($argumentos as $indice => $value){
+					if($value!='') $arg.="+'&".$value."='+".$value;
+				}
+				$script_js="
+				$.ajax({
+					cache: false,
+					async: false,
+					url: 'controlador/contGeneral.php?accion=ELIMINAR&idvista=".$idvista."&idvistaatributo='+idvistaatributo".$arg.",
+					success: function(data) {
+						alert(data);
+					},
+				});	";
+			}elseif($operacion["idhandler"]==4){//REDIRECCIONAR
+				$argumentos=explode(',',$operacion["argumentos"]);
+				foreach($argumentos as $indice => $value){
+					if($value!='') $arg.="+'&".$value."='+".$value;
+				}
+				$script_js="setRun(".$operacion["idvista_redirect"].",'".$operacion["accion"]."','&idtabla_redirect=".$operacion["idtabla"]."&idoperacion_redirect=".$operacion["idoperacion"]."".(isset($arg)?substr($arg,2):"'").",'".$operacion["contenedor_redirect"]."');";
+			}elseif($operacion["idhandler"]==5){//OTRO
 				$argumentos=explode(',',$operacion["argumentos"]);
 				$arg="";
 				foreach($argumentos as $indice => $value){
@@ -366,12 +424,6 @@ class clsGeneral extends clsAccesoDatos
 						alert(data);
 					},
 				});	";
-			}elseif($operacion["idhandler"]==4){//REDIRECCIONAR
-				$argumentos=explode(',',$operacion["argumentos"]);
-				foreach($argumentos as $indice => $value){
-					if($value!='') $arg.="+'&".$value."='+".$value;
-				}
-				$script_js="setRun(".$operacion["idvista_redirect"].",'".$operacion["accion"]."','&idtabla_redirect=".$operacion["idtabla"]."&idoperacion_redirect=".$operacion["idoperacion"]."".(isset($arg)?substr($arg,2):"'").",'".$operacion["contenedor_redirect"]."');";
 			}else{
 				$script_js=$operacion['script_js'];
 			}

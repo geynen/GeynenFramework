@@ -87,10 +87,34 @@ switch($accion){
 		}
 		break;
 		
+	case "ELIMINAR" :
+		if(ob_get_length()) ob_clean();
+		//OBTENGO DATOS DE LA OPERACION
+		$rstOperacion = $objGeneral->getOperaciones($idvista,0,0,0,3,'',$_GET['idvistaatributo']);
+		if(is_string($rstCampos)){
+			echo "Error al obtener operaciones a mostrar ".$rstCampos."";
+			exit();
+		}
+		$dataOperacion = $rstOperacion->fetchObject();
+		//OBTENGO DATOS DE LOS CAMPOS ENVIADOS EN LA URL
+		$argumentos=explode(',',$dataOperacion->argumentos);
+		foreach($argumentos as $indice => $value){
+			$data[$value]=$_GET[$value];
+		}
+		$function_sql=$dataOperacion->function_sql;
+		$argumentos_sql=$dataOperacion->argumentos_sql;
+		
+		if($function_sql!=''){
+			echo $objGeneral->operacionGeneral($data,$function_sql,$argumentos_sql);
+		}else{
+			echo $objGeneral->eliminarGeneral($idvista,$data);
+		}
+		break;
+		
 	case "OPERACION" :
 		if(ob_get_length()) ob_clean();
 		//OBTENGO DATOS DE LA OPERACION
-		$rstOperacion = $objGeneral->getOperaciones($idvista,1,1,3,3);
+		$rstOperacion = $objGeneral->getOperaciones($idvista,0,0,0,0,'',$_GET['idvistaatributo']);
 		if(is_string($rstCampos)){
 			echo "Error al obtener operaciones a mostrar ".$rstCampos."";
 			exit();
