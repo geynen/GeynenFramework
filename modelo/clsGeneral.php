@@ -492,7 +492,7 @@ class clsGeneral extends clsAccesoDatos
 					$arrayValor=explode('|',$value);
 					$valor=trim($arrayValor[0]);
 					$descripcion=trim($arrayValor[1]);
-					$seleccionado=(isset($datocampo)?$datocampo:$defecto);
+					$seleccionado=(isset($datocampo)?$datocampo:(isset($_GET[$nombre])?$_GET[$nombre]:$defecto));
 					$renderControles.='<option value="'.$valor.'" '.($seleccionado==$valor?'selected':'').' >'.$descripcion.'</option>';
 				}
 				$renderControles.='</select>';
@@ -515,7 +515,7 @@ class clsGeneral extends clsAccesoDatos
 					$arrayValores=explode(",",$valores);//solo se acepta 2 valores
 					$valor=trim($datoTabla->$arrayValores[0]);
 					$descripcion=trim($datoTabla->$arrayValores[1]);
-					$seleccionado=(isset($datocampo)?$datocampo:$defecto);
+					$seleccionado=(isset($datocampo)?$datocampo:(isset($_GET[$nombre])?$_GET[$nombre]:$defecto));
 					$renderControles.='<option value="'.$valor.'" '.($seleccionado==$valor?'selected':'').' >'.$descripcion.'</option>';
 				}
 				$renderControles.='</select>';
@@ -538,7 +538,7 @@ class clsGeneral extends clsAccesoDatos
 					$arrayValores=explode(",",$valores);//solo se acepta 2 valores
 					$valor=trim($datoVista->$arrayValores[0]);
 					$descripcion=trim($datoVista->$arrayValores[1]);
-					$seleccionado=(isset($datocampo)?$datocampo:$defecto);
+					$seleccionado=(isset($datocampo)?$datocampo:(isset($_GET[$nombre])?$_GET[$nombre]:$defecto));
 					$renderControles.='<option value="'.$valor.'" '.($seleccionado==$valor?'selected':'').' >'.$descripcion.'</option>';
 				}
 				$renderControles.='</select>';
