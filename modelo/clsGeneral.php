@@ -438,7 +438,7 @@ class clsGeneral extends clsAccesoDatos
 	}
 	
 	function renderControles($idvista,$idcampo,$nombre,$etiqueta,$css,$idtipocontrol,$idcombo,$valor_opcional,$valores,$defecto,$datocampo){
-		$etiquetainicio='<li><label for="'.$value['nombre'].'">'.$value['etiqueta'].': </label>';
+		$etiquetainicio='<li id="li_'.$nombre.'"><label for="'.$nombre.'">'.$etiqueta.': </label>';
 		$etiquetafin='</li>';
 		switch ($idtipocontrol){
 			case 2://CAJA DE OCULTA
