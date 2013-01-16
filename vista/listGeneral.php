@@ -62,9 +62,11 @@ if(isset($filtro)){
 		$renderCampos.=$value['etiqueta'].': <input type="text" id="'.$value['nombre'].'" name="'.$value['nombre'].'" value="'.$_GET[$value['defecto']].'">';	
 	}
 	echo $renderCampos;
-}
 ?>
 <button id="btn_buscar">Buscar</button>
+<?php 
+}
+?>
 <input name="nro_hoja" type="hidden" id="nro_hoja" value="<?php echo $nro_hoja;?>">
 <input name="by" type="hidden" id="by" value="<?php echo $by;?>">
 <input name="order" type="hidden" id="order" value="<?php echo $order;?>">

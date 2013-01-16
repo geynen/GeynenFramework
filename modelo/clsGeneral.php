@@ -239,16 +239,18 @@ class clsGeneral extends clsAccesoDatos
 		return $filtro;
 	}
 	
-	function getCampos($idvista, $idregionvista=0){
+	function getCampos($idvista, $idregionvista=0, $idtabla=0, $idcampo=0){
 		if(parent::getTipoBD()==1){
 			$descripcion = "%".$descripcion."%";
 			$sql = "execute up_BuscarGeneral ".$nro_reg.", $nro_hoja, '$order', $by, $id, '".$descripcion."'";
 			return $this->obtenerDataSP($sql);
 		}else{
-			$sql="select c.idtabla, c.idcampo, c.nombre as nombre, c.idtipocontrol, c.idtipodato, c.idcombo, c.valores, c.idhandler, c.script_js, c.llave, c.valor_opcional, va.etiqueta, va.operador, va.defecto, va.css, va.visible from vista_atributo va inner join campo c on va.idatributo=c.idcampo and va.idtabla=c.idtabla and tipoatributo='C' inner join tabla on tabla.idtabla=c.idtabla where 1=1 ";
+			$sql="select c.idtabla, c.idcampo, c.nombre as nombre, c.idtipocontrol, c.idtipodato, c.idcombo, c.valores, c.idhandler, c.script_js, c.llave, c.valor_opcional, c.campos_ref, va.etiqueta, va.operador, va.defecto, va.css, va.visible from vista_atributo va inner join campo c on va.idatributo=c.idcampo and va.idtabla=c.idtabla and tipoatributo='C' inner join tabla on tabla.idtabla=c.idtabla where 1=1 ";
 			
 			if($idvista>0){ $sql.=" AND va.idvista = ".$idvista;}
 			if($idregionvista>0){ $sql.=" AND idregionvista = ".$idregionvista;}
+			if($idtabla>0){ $sql.=" AND c.idtabla = ".$idtabla;}
+			if($idcampo>0){ $sql.=" AND c.idcampo = ".$idcampo;}
 			
 			$sql.=" order by va.orden asc";
 			
@@ -454,7 +456,7 @@ class clsGeneral extends clsAccesoDatos
 		return $renderScripJS_Operaciones;
 	}
 	
-	function renderControles($idvista,$idtabla,$idcampo,$nombre,$etiqueta,$css,$idtipocontrol,$idcombo,$valor_opcional,$valores,$defecto,$datocampo){
+	function renderControl($idvista,$idtabla,$idcampo,$nombre,$etiqueta,$css,$idtipocontrol,$idcombo,$valor_opcional,$valores,$defecto,$datocampo,$campos_ref,$ajax='NO'){
 		
 		//OBTENGO ATRIBUTOS DEL CAMPO
 		$rstAtributoCampo=$this->getAtributosCampo($idtabla,$idcampo);
@@ -479,13 +481,13 @@ class clsGeneral extends clsAccesoDatos
 			case 2://CAJA DE OCULTA
 				$etiquetainicio='';
 				$etiquetafin='';
-				$renderControles='<input type="hidden" id="'.$nombre.'" name="'.$nombre.'" value="'.(isset($datocampo)?$datocampo:$_GET[$nombre]).'">';
+				$renderControl='<input type="hidden" id="'.$nombre.'" name="'.$nombre.'" value="'.(isset($datocampo)?$datocampo:$_GET[$nombre]).'">';
 				break;
 			case 3://TEXT AREA
-				$renderControles='<textarea id="'.$nombre.'" name="'.$nombre.'" rows="'.$datoAtributoControl['rows']['defecto'].'"  cols="'.$datoAtributoControl['cols']['defecto'].'">'.(isset($datocampo)?$datocampo:$_GET[$nombre]).'</textarea>';
+				$renderControl='<textarea id="'.$nombre.'" name="'.$nombre.'" rows="'.$datoAtributoControl['rows']['defecto'].'"  cols="'.$datoAtributoControl['cols']['defecto'].'">'.(isset($datocampo)?$datocampo:$_GET[$nombre]).'</textarea>';
 				break;
 			case 4://SELECT SIMPLE
-				$renderControles='<select id="'.$nombre.'" name="'.$nombre.'">';
+				$renderControl='<select id="'.$nombre.'" name="'.$nombre.'">';
 				//Separamos cadena de valores por cada salto de linea
 				$arrayValores=explode("\x0a",$valores);
 				foreach($arrayValores as $indice => $value){
@@ -493,22 +495,46 @@ class clsGeneral extends clsAccesoDatos
 					$valor=trim($arrayValor[0]);
 					$descripcion=trim($arrayValor[1]);
 					$seleccionado=(isset($datocampo)?$datocampo:(isset($_GET[$nombre])?$_GET[$nombre]:$defecto));
-					$renderControles.='<option value="'.$valor.'" '.($seleccionado==$valor?'selected':'').' >'.$descripcion.'</option>';
+					$renderControl.='<option value="'.$valor.'" '.($seleccionado==$valor?'selected':'').' >'.$descripcion.'</option>';
 				}
-				$renderControles.='</select>';
+				$renderControl.='</select>';
 				break;
 			case 5://SELECT SIMPLE ORIGEN TABLA
-				$renderControles='<select id="'.$nombre.'" name="'.$nombre.'">';
+				//Verifico si es un campo dependiente
+				if(isset($campos_ref) and $campos_ref!=''){
+					$filtroCombo=explode(",",$campos_ref);
+					foreach($filtroCombo as $indice => $value){
+						//obtengo filtros de los campos del cual depende
+						$filtroComboJS.="&".$value."='+document.getElementById('".$value."').value";
+						$filtro.=$value."=".$_GET[$value]." and";
+						//creo handlers js
+						$handlerJS.="$('#".$value."').click(function(evt) { exec_".$nombre."(); });";
+					}
+					if($ajax=='NO'){//Si la renderización es sin ajax, creo y ejecuto el script js para la rendreización por vez primera
+						$renderControlJS.="<script>";
+						$renderControlInit="setAjax(".$idvista.",'ajaxGeneral','CONTROL','idtablacontrol=".$idtabla."&idcampocontrol=".$idcampo.(isset($filtroComboJS)?$filtroComboJS:"'").",'li_".$nombre."');";
+						$renderControlJS.=$renderControlInit;
+						$renderControlJS.="function exec_".$nombre."(){".$renderControlInit."}";
+						$renderControlJS.=$handlerJS;
+						$renderControlJS.="</script>";
+						break;
+					}
+				}
+				$filtro=substr($filtro,0,-3);	
+				
+				//Inicio renderizacion del combo			
+				$renderControl='<select id="'.$nombre.'" name="'.$nombre.'">';
 				//Obtengo datos del valor opcional
 				if($valor_opcional!=''){
 					$arrayValor_opcional=explode('|',$valor_opcional);
 					$valor_opcional=trim($arrayValor_opcional[0]);
 					$descripcion_opcional=trim($arrayValor_opcional[1]);
-					$renderControles.='<option value="'.$valor_opcional.'" selected>'.$descripcion_opcional.'</option>';
+					$renderControl.='<option value="'.$valor_opcional.'" selected>'.$descripcion_opcional.'</option>';
 				}
 				//Obtengo datos de la tabla
 				$datosTabla=$this->getTabla($idcombo);
-				$sql="select * from ".$datosTabla->nombre." order by 2 asc";
+				$sql="select * from ".strtolower($datosTabla->nombre).($filtro!=''?" where ".$filtro:"")." order by 2 asc";
+				//echo $sql;
 				$rstTabla=$this->obtenerDataSQL($sql);
 				while($datoTabla=$rstTabla->fetchObject()){
 					//Separamos cadena de valores a mostrar
@@ -516,18 +542,18 @@ class clsGeneral extends clsAccesoDatos
 					$valor=trim($datoTabla->$arrayValores[0]);
 					$descripcion=trim($datoTabla->$arrayValores[1]);
 					$seleccionado=(isset($datocampo)?$datocampo:(isset($_GET[$nombre])?$_GET[$nombre]:$defecto));
-					$renderControles.='<option value="'.$valor.'" '.($seleccionado==$valor?'selected':'').' >'.$descripcion.'</option>';
+					$renderControl.='<option value="'.$valor.'" '.($seleccionado==$valor?'selected':'').' >'.$descripcion.'</option>';
 				}
-				$renderControles.='</select>';
+				$renderControl.='</select>';
 				break;
 			case 6://SELECT SIMPLE ORIGEN VISTA (PENDIENTE)
-				$renderControles='<select id="'.$nombre.'" name="'.$nombre.'">';
+				$renderControl='<select id="'.$nombre.'" name="'.$nombre.'">';
 				//Obtengo datos del valor opcional
 				if($valor_opcional!=''){
 					$arrayValor_opcional=explode('|',$valor_opcional);
 					$valor_opcional=trim($arrayValor_opcional[0]);
 					$descripcion_opcional=trim($arrayValor_opcional[1]);
-					$renderControles.='<option value="'.$valor_opcional.'" selected>'.$descripcion_opcional.'</option>';
+					$renderControl.='<option value="'.$valor_opcional.'" selected>'.$descripcion_opcional.'</option>';
 				}
 				//OBTENGO SENTENCIA SQL
 				$sqlVista=$this->getSQL($idcombo);
@@ -539,15 +565,15 @@ class clsGeneral extends clsAccesoDatos
 					$valor=trim($datoVista->$arrayValores[0]);
 					$descripcion=trim($datoVista->$arrayValores[1]);
 					$seleccionado=(isset($datocampo)?$datocampo:(isset($_GET[$nombre])?$_GET[$nombre]:$defecto));
-					$renderControles.='<option value="'.$valor.'" '.($seleccionado==$valor?'selected':'').' >'.$descripcion.'</option>';
+					$renderControl.='<option value="'.$valor.'" '.($seleccionado==$valor?'selected':'').' >'.$descripcion.'</option>';
 				}
-				$renderControles.='</select>';
+				$renderControl.='</select>';
 				break;
 			default://CAJA DE TEXTO
-				$renderControles='<input type="text" id="'.$nombre.'" name="'.$nombre.'" value="'.(isset($datocampo)?$datocampo:$_GET[$nombre]).'">';
+				$renderControl='<input type="text" id="'.$nombre.'" name="'.$nombre.'" value="'.(isset($datocampo)?$datocampo:$_GET[$nombre]).'">';
 				break;
 		}
-		return $etiquetainicio.$renderControles.$etiquetafin;	
+		return $etiquetainicio.$renderControl.$etiquetafin.$renderControlJS;	
 	}
 }
 ?>
