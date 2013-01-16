@@ -505,14 +505,14 @@ class clsGeneral extends clsAccesoDatos
 					$filtroCombo=explode(",",$campos_ref);
 					foreach($filtroCombo as $indice => $value){
 						//obtengo filtros de los campos del cual depende
-						$filtroComboJS.="&".$value."='+document.getElementById('".$value."').value";
-						$filtro.=$value."=".$_GET[$value]." and";
+						$filtroComboJS.="&".$value."='+document.getElementById('".$value."').value + '";
+						$filtro.=$value."='".$_GET[$value]."' and ";
 						//creo handlers js
 						$handlerJS.="$('#".$value."').click(function(evt) { exec_".$nombre."(); });";
 					}
 					if($ajax=='NO'){//Si la renderización es sin ajax, creo y ejecuto el script js para la rendreización por vez primera
 						$renderControlJS.="<script>";
-						$renderControlInit="setAjax(".$idvista.",'ajaxGeneral','CONTROL','idtablacontrol=".$idtabla."&idcampocontrol=".$idcampo.(isset($filtroComboJS)?$filtroComboJS:"'").",'li_".$nombre."');";
+						$renderControlInit="setAjax(".$idvista.",'ajaxGeneral','CONTROL','idtablacontrol=".$idtabla."&idcampocontrol=".$idcampo."&datocampo=".(isset($datocampo)?$datocampo:(isset($_GET[$nombre])?$_GET[$nombre]:$defecto)).(isset($filtroComboJS)?$filtroComboJS:"")."','li_".$nombre."');";
 						$renderControlJS.=$renderControlInit;
 						$renderControlJS.="function exec_".$nombre."(){".$renderControlInit."}";
 						$renderControlJS.=$handlerJS;
@@ -520,7 +520,7 @@ class clsGeneral extends clsAccesoDatos
 						break;
 					}
 				}
-				$filtro=substr($filtro,0,-3);	
+				$filtro=substr($filtro,0,-4);	
 				
 				//Inicio renderizacion del combo			
 				$renderControl='<select id="'.$nombre.'" name="'.$nombre.'">';
